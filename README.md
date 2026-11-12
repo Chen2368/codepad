@@ -11,7 +11,7 @@ git clone https://github.com/Chen2368/codepad.git
 cd codepad
 ```
 
-**下载 APK（免构建）**：[Releases](https://github.com/Chen2368/codepad/releases/latest) · [备用直链](https://raw.githubusercontent.com/Chen2368/codepad/release-assets/CodePad-1.0.0-release-arm64.apk) · **从源码构建**：[docs/build-from-source.md](docs/build-from-source.md)
+**下载 APK（免构建）**：[Releases](https://github.com/Chen2368/codepad/releases/latest) · **从源码构建**：[docs/build-from-source.md](docs/build-from-source.md)
 > 版本修复记录：
 > - **0.3.2**：示例工程多个文件都有 `main()`，而多文件规则把它们全丢给编译器 → `duplicate symbol main`，任何文件都跑不起来（示例工程文件数不该混进编译单元规则）。
 > - **0.3.3**：打包脚本把 bionic 的 `include/android/` 裁掉了，而 `sys/cdefs.h` 无条件 `#include <android/versioning.h>` → 所有 C 程序报 include file not found。
@@ -63,16 +63,10 @@ cd codepad
 
 ### 下载安装包
 
-**首选**：GitHub Releases（[最新版本](https://github.com/Chen2368/codepad/releases/latest)）
-
-**备用**（Releases 打不开、或附件未上传时）：直链下载，同一份文件
-
-```
-https://raw.githubusercontent.com/Chen2368/codepad/release-assets/CodePad-1.0.0-release-arm64.apk
-```
+[**⬇ 下载 CodePad 1.0.0（arm64）**](https://github.com/Chen2368/codepad/releases/latest)
 
 - `CodePad-1.0.0-release-arm64.apk` — 10.8 MB，平板上直接安装（**仅 arm64**）
-- 调试版 49.1 MB 需要自己构建，见 [docs/build-from-source.md](docs/build-from-source.md)
+- `CodePad-1.0.0-debug-arm64.apk` — 49.1 MB，调试用（可 `adb logcat` 看原生日志）
 
 校验（release 包）：
 
