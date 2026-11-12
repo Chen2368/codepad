@@ -88,7 +88,7 @@ $ flutter analyze
 No issues found! (ran in 5.2s)
 
 $ flutter test
-00:04 +164: All tests passed!
+00:04 +167: All tests passed!
   模型层（3）        语言识别 / 路径拆分 / 仓库排序
   界面骨架（3）      首页渲染 / 运行链路 / 平板横屏文件树
   高亮（9）          C++ 关键字类型函数数字 / 注释字符串预处理 / 块注释跨行 /
@@ -155,7 +155,7 @@ E:\renwu\
       compat-headers\                  ★ 垫片源文件（由 scripts\fetch-toolchain.ps1 复制进 assets）
       app\src\main\jniLibs\arm64-v8a\libtcc.so   ← 编译器本体，装后落在 nativeLibraryDir
       app\src\main\kotlin\…\NativeCompiler.kt    ← MethodChannel：解压工具链、跑 tcc、stdin/EOF
-    dist\                     0.13.0 的 APK（archive\ 里是旧版）
+    dist\                     本地构建产物（已被 .gitignore 忽略；APK 走 GitHub Releases）
     scripts\
       flutter-env.ps1         一键注入 SDK / JDK / Android SDK 与各类缓存路径
       fetch-toolchain.ps1     从 Termux 仓库重抓并组装内置 C 工具链（可重复构建，带自检 + 补 include guard）
@@ -180,7 +180,7 @@ E:\renwu\
         unavailable_runtime_engine.dart  缺运行时 → 明确报错，不伪造输出
         runtime_factory.dart         语言 → 引擎（preferNative 开关）
       features\ home\ editor\（含 highlight\）settings\ templates\ widgets\
-    test\                     164 个测试（20 个文件）
+    test\                     167 个测试（21 个文件）
     docs\
       architecture.md         分层、数据流、Phase 3 四个关键取舍、限制
       phase1-checklist.md     骨架阶段交付清单
