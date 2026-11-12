@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  analyze-and-test:
+    name: analyze + test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安装 Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: 依赖
+        run: flutter pub get
+
+      - name: 静态检查
+        run: flutter analyze
+
+      # 单元与组件测试不需要 Android SDK，也不需要内置 C 工具链
+      - name: 测试
+        run: flutter test --reporter expanded
+
+  # 需要真实 C 工具链的验收脚本依赖 Windows 版 tcc，放在本地跑（见 docs/build-from-source.md），
+  # 这里只保证「代码可分析、测试可通过」。

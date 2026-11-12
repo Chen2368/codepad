@@ -1,0 +1,25 @@
+name: codepad
+description: "CodePad —— 面向平板（Android / HarmonyOS）的轻量级 C/C++、Python 移动编程 IDE。"
+publish_to: 'none'
+version: 1.0.0+24
+
+environment:
+  # 需要 Flutter 3.27+（代码里用到了 Color.withValues 等新 API）
+  sdk: '>=3.4.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  # Phase 2：工程与设置的持久化
+  path: ^1.9.0
+  path_provider: ^2.1.5
+  shared_preferences: ^2.3.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true

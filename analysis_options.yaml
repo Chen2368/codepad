@@ -1,0 +1,21 @@
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  language:
+    strict-casts: true
+    strict-raw-types: true
+  errors:
+    # 骨架阶段允许 TODO 备注存在
+    todo: ignore
+  exclude:
+    - build/**
+    - android/**
+
+linter:
+  rules:
+    - always_declare_return_types
+    - avoid_print
+    - prefer_single_quotes
+    - prefer_const_constructors
+    - prefer_final_locals
+    - unnecessary_parenthesis

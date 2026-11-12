@@ -1,0 +1,24 @@
+# 统一换行符，避免 Windows / macOS 互相提交时整文件 diff
+* text=auto
+
+# 源码用 LF
+*.dart   text eol=lf
+*.kt     text eol=lf
+*.kts    text eol=lf
+*.md     text eol=lf
+*.yaml   text eol=lf
+*.yml    text eol=lf
+*.xml    text eol=lf
+*.c      text eol=lf
+*.h      text eol=lf
+
+# PowerShell 脚本在 Windows 上执行，保持 CRLF（且带 BOM，中文才不会乱码）
+*.ps1    text eol=crlf
+
+# 二进制（理论上被 .gitignore 排除，这里再兜一层）
+*.png    binary
+*.jpg    binary
+*.ttf    binary
+*.so     binary
+*.a      binary
+*.apk    binary

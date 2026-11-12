@@ -1,0 +1,57 @@
+# ---------- Flutter / Dart ----------
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# 应用工程建议提交 pubspec.lock（锁定依赖版本），所以不忽略它
+
+# ---------- Android ----------
+android/.gradle/
+android/local.properties
+android/app/release/
+android/app/profile/
+android/key.properties
+*.apk
+*.aab
+*.jks
+*.keystore
+
+# 由 scripts/fetch-toolchain.ps1 生成，不入库（见 docs/build-from-source.md）
+android/app/src/main/assets/toolchain/
+android/app/src/main/jniLibs/arm64-v8a/libtcc.so
+
+# ---------- 产物 / 编译中间文件 ----------
+dist/
+*.exe
+*.o
+*.obj
+*.pdb
+
+# ---------- IDE ----------
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.history/
+
+# ---------- OS ----------
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---------- 临时 / 日志 ----------
+*.bak
+*.orig
+*.old
+*.log
+*.tmp
+zz_*
+~$*
+
+# ---------- 本地工具链缓存（脚本默认放在仓库上一级或仓库内的 toolchain/）----------
+/toolchain/
