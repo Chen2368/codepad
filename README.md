@@ -5,6 +5,13 @@
 当前状态：**Phase 3 完成并在真机验证通过（**1.0.0**，C 完整支持：标准库 43/44 头、自检 7 项、链接失败自动补救）** —— C 语言真编译真运行，编译错误可点击跳行、带中文提示，支持多 `.c` 文件与标准输入，内置一键编译器自检。
 `flutter analyze` 无问题、`flutter test` 167 个测试全绿、release APK 10.8 MB；C 标准库覆盖见 `scripts\c-coverage-test.ps1`（头文件 43/44、功能组 17/18、真实缺口 0）。
 
+
+```bash
+git clone https://github.com/Chen2368/codepad.git
+cd codepad
+```
+
+**下载 APK（免构建）**：[Releases](https://github.com/Chen2368/codepad/releases/latest) · **从源码构建**：[docs/build-from-source.md](docs/build-from-source.md)
 > 版本修复记录：
 > - **0.3.2**：示例工程多个文件都有 `main()`，而多文件规则把它们全丢给编译器 → `duplicate symbol main`，任何文件都跑不起来（示例工程文件数不该混进编译单元规则）。
 > - **0.3.3**：打包脚本把 bionic 的 `include/android/` 裁掉了，而 `sys/cdefs.h` 无条件 `#include <android/versioning.h>` → 所有 C 程序报 include file not found。
@@ -54,13 +61,17 @@
 | 设置持久化 | 主题 / 字号 / 行号开关 + 内置编译器状态，重启后保持 |
 | 平板适配 | ≥ 840 逻辑像素（横屏）左侧常驻文件树，窄屏收进抽屉 |
 
-已产出的安装包（`dist\`，旧版在 `dist\archive\`）：
+已产出的安装包走 **GitHub Releases**（构建产物不入库）：
+
+**[⬇ 下载 CodePad 1.0.0（arm64）](https://github.com/Chen2368/codepad/releases/latest)**
+
+- `CodePad-1.0.0-release-arm64.apk` — 10.8 MB，平板上直接安装
+- `CodePad-1.0.0-debug-arm64.apk` — 49.1 MB，调试用（可 `adb logcat` 看原生日志）
+
+校验（release 包）：
 
 ```
-dist\CodePad-1.0.0-release-arm64.apk   10.8 MB   ← 装这个
-  sha256 5E3C153E16F099B161B31782AB315A205B667F6F910ADD868D2F8F75FAD1B861
-dist\CodePad-1.0.0-debug-arm64.apk     49.1 MB   ← 调试用，可 adb logcat 看原生日志
-  sha256 20600673DBC9F51263DE4077A053F5EA97AEB604807C4428AC4CFA15ADA99117
+sha256 5E3C153E16F099B161B31782AB315A205B667F6F910ADD868D2F8F75FAD1B861
 ```
 
 包信息（`aapt2 dump badging` / `dump xmltree` 实测）：
@@ -82,7 +93,7 @@ C 工具链随包增量约 6.6 MB（tcc 370 KB + libtcc1.a/crt 0.3 MB + bionic �
 
 ```
 Flutter 3.47.9 · Dart 3.13.7 · JDK Temurin 17.0.21+9 · Android SDK 36.0.0 · NDK 28.2.13676358
-（全部装在 E:\renwu\toolchain，不占用 C 盘）
+（开发机上这些 SDK 装在仓库之外的目录，不占用系统盘；仓库本身不含它们）
 
 $ flutter analyze
 No issues found! (ran in 5.2s)
@@ -141,21 +152,19 @@ $ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\acceptance-tes
 ## 三、目录结构
 
 ```
-E:\renwu\
-  toolchain\                  ← SDK / 缓存全部在这里，不写 C 盘
-    flutter-sdk\ jdk\ android-sdk\ pub-cache\ gradle\ home\ appdata\ localappdata\ tmp\ logs\
-    tmp\ex-tcc\ tmp\ex-sysroot\      ← 内置 tcc 工具链的解包现场
-  codepad\                    ← 本项目
+codepad\                      ← 仓库根（git clone 后就是这里）
     pubspec.yaml              path_provider / shared_preferences / path
     android\
-      app\src\main\assets\toolchain\    ← bionic 头文件 + tcc 运行库（随包 6.6 MB）
+      app\src\main\assets\toolchain\    ← 生成物（fetch-toolchain.ps1 产出，不入库）
         include\                       bionic 原样（含 android/ media/ drm/）
         compat\                        ★ tcc 兼容垫片：sys/cdefs.h 抹平 _Nonnull/__RENAME/__availability__，limits.h 自带 INT_MAX
         tcc\                           libtcc1.a + crt*.o + tcc 自带头
       compat-headers\                  ★ 垫片源文件（由 scripts\fetch-toolchain.ps1 复制进 assets）
       app\src\main\jniLibs\arm64-v8a\libtcc.so   ← 编译器本体，装后落在 nativeLibraryDir
       app\src\main\kotlin\…\NativeCompiler.kt    ← MethodChannel：解压工具链、跑 tcc、stdin/EOF
-    dist\                     本地构建产物（已被 .gitignore 忽略；APK 走 GitHub Releases）
+    dist\                     构建产物（.gitignore 忽略；对外发布走 GitHub Releases）
+    build\ .dart_tool\          Flutter 构建缓存（.gitignore 忽略）
+    （可选）toolchain\          脚本缓存，默认在仓库上一级；可用 CODEPAD_TOOLCHAIN_DIR 覆盖
     scripts\
       flutter-env.ps1         一键注入 SDK / JDK / Android SDK 与各类缓存路径
       fetch-toolchain.ps1     从 Termux 仓库重抓并组装内置 C 工具链（可重复构建，带自检 + 补 include guard）
