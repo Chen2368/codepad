@@ -79,8 +79,15 @@ headers   → headers=65,6,7
 | `scripts/acceptance-test.ps1` | 用真实 tcc 跑「App 会发的命令」，7 个用例 / 8 项断言 |
 | `scripts/c-coverage-test.ps1` | C 标准库覆盖矩阵：44 个头逐个编译 + 18 组函数实测 |
 
-两个脚本都需要本机有 Windows 版 tcc（`acceptance-test.ps1` 默认路径
-`E:\renwu\toolchain\tcc-win\cc\tcc.exe`，改脚本顶部变量即可）。
+两个脚本都需要**本机有一份 Windows 版 tcc 0.9.27**（与真机同源码），
+用环境变量指过去即可：
+
+```powershell
+$env:CODEPAD_TCC_WIN = 'D:\tools\tcc-win\cc\tcc.exe'
+```
+
+没设置时默认找 `E:\renwu\toolchain\tcc-win\cc\tcc.exe`（原作者的位置）。
+脚本的临时产物写在仓库的 `build/` 下，已被 git 忽略。
 
 ## 常见问题
 

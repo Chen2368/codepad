@@ -24,7 +24,12 @@ $ErrorActionPreference = 'Stop'
 
 $projectRoot = Split-Path $PSScriptRoot -Parent
 $workspace   = Split-Path $projectRoot -Parent
-$tmp         = Join-Path $workspace 'toolchain\tmp'
+# 缓存目录：优先用环境变量 CODEPAD_TOOLCHAIN_DIR，
+# 否则放在仓库上一级的 toolchain/（本机习惯：所有 SDK/缓存都不放 C 盘）。
+# 克隆到任意位置的人直接用默认值也能跑。
+$cacheRoot   = if ($env:CODEPAD_TOOLCHAIN_DIR) { $env:CODEPAD_TOOLCHAIN_DIR } else { Join-Path $workspace 'toolchain' }
+$tmp         = Join-Path $cacheRoot 'tmp'
+New-Item -ItemType Directory -Force -Path $tmp | Out-Null
 $assets      = Join-Path $projectRoot 'android\app\src\main\assets\toolchain'
 $jniDir      = Join-Path $projectRoot 'android\app\src\main\jniLibs\arm64-v8a'
 

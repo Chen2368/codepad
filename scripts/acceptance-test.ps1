@@ -15,8 +15,8 @@
 $ErrorActionPreference = 'Continue'   # 编译器往 stderr 写错误是正常现象，不能让 PS 当成致命错误
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $assets = Join-Path $projectRoot 'android\app\src\main\assets\toolchain'
-$tcc = 'E:\renwu\toolchain\tcc-win\tcc\tcc.exe'
-$work = 'E:\renwu\toolchain\tmp\acceptance'
+$tcc = if ($env:CODEPAD_TCC_WIN) { $env:CODEPAD_TCC_WIN } else { 'E:\renwu\toolchain\tcc-win\tcc\tcc.exe' }
+$work = Join-Path $projectRoot 'build\acceptance'   # build/ 已被 .gitignore 忽略
 
 if (-not (Test-Path $tcc)) {
   throw "找不到 tcc：$tcc"

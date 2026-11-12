@@ -8,8 +8,8 @@
 $ErrorActionPreference = 'Continue'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $assets = Join-Path $projectRoot 'android\app\src\main\assets\toolchain'
-$tcc = 'E:\renwu\toolchain\tcc-win\tcc\tcc.exe'
-$work = 'E:\renwu\toolchain\tmp\c-coverage'
+$tcc = if ($env:CODEPAD_TCC_WIN) { $env:CODEPAD_TCC_WIN } else { 'E:\renwu\toolchain\tcc-win\tcc\tcc.exe' }
+$work = Join-Path $projectRoot 'build\c-coverage'   # build/ 已被 .gitignore 忽略
 
 if (Test-Path $work) { Remove-Item $work -Recurse -Force }
 New-Item -ItemType Directory -Force -Path $work | Out-Null
@@ -17,7 +17,7 @@ New-Item -ItemType Directory -Force -Path $work | Out-Null
 $flags = @(
   "-B$(Join-Path $assets 'tcc')",
   "-L$(Join-Path $assets 'tcc')",
-  "-LE:\renwu\toolchain\tcc-win\tcc\lib",
+  "-L$(Join-Path (Split-Path -Parent $tcc) 'lib')",
   "-I$(Join-Path $assets 'compat')",
   "-I$(Join-Path $assets 'include')",
   "-I$(Join-Path $assets 'include\aarch64-linux-android')",
