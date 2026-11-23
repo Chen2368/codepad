@@ -378,7 +378,7 @@ class NativeCompiler(
         const val TOOLCHAIN_VERSION = "tcc-0.9.27-p20230415-android-7"
 
         /** 命令行形状变了就改这里：会出现在自检报告首屏，用来区分构建。 */
-        const val BUILD_TAG = "1.0.2-diag"
+        const val BUILD_TAG = "1.0.3-budget"
 
         /** 与 build.gradle.kts 的 minSdk 一致；bionic 头文件需要这个宏。 */
         const val ANDROID_MIN_SDK = 24

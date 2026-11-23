@@ -8,11 +8,11 @@ class AppConstants {
   static const String appName = 'CodePad';
 
   /// 当前版本号，与 pubspec.yaml 保持一致。
-  static const String version = '1.0.2';
+  static const String version = '1.0.3';
 
   /// 当前开发阶段说明，显示在首页副标题与设置页「关于」里。
   /// 构建标记：与 Kotlin 侧 BUILD_TAG 一致，用于区分安装的是哪个包。
-  static const String buildTag = '1.0.2-diag';
+  static const String buildTag = '1.0.3-budget';
 
   static const String phaseLabel = 'C 完整支持 · 平板 IDE';
 

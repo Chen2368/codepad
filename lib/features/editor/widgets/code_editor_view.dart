@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/text/code_indent_formatter.dart';
 import '../../../core/text/completion.dart';
+import '../highlight/highlighting_controller.dart';
 import '../../../core/theme/app_theme.dart';
 import 'completion_strip.dart';
 import 'symbol_bar.dart';
@@ -242,6 +243,9 @@ class _CodeEditorViewState extends State<CodeEditorView> {
         ),
         ),
         // 补全候选（有匹配才出现）
+        // 超大文件：高亮已按预算关掉，这里明确告诉用户原因（否则会被当成 bug）
+        if (_highlightSuspended)
+          _budgetNotice(palette),
         CompletionStrip(items: _suggestions(), onPick: _applyCompletion),
         // 软键盘打不出符号，给它一排按钮
         CodeSymbolBar(
@@ -249,6 +253,38 @@ class _CodeEditorViewState extends State<CodeEditorView> {
           fontSize: widget.fontSize * 0.86,
         ),
       ],
+    );
+  }
+  /// 当前文件是否已超出高亮预算（控制器实现了该接口才会返回 true）。
+  bool get _highlightSuspended {
+    final TextEditingController controller = widget.controller;
+    if (controller is HighlightingTextEditingController) {
+      return controller.highlightDisabled;
+    }
+    return false;
+  }
+
+  Widget _budgetNotice(AppPalette palette) {
+    return Container(
+      height: 30,
+      alignment: Alignment.centerLeft,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: palette.warning.withValues(alpha: 0.10),
+        border: Border(bottom: BorderSide(color: palette.border)),
+      ),
+      child: Row(
+        children: <Widget>[
+          Icon(Icons.speed, size: 14, color: palette.warning),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              '文件较大，语法高亮已关闭以保证输入流畅（编辑、保存、运行不受影响）',
+              style: TextStyle(fontSize: 11, color: palette.warning),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

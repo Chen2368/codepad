@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../data/models/program_language.dart';
 import '../../../core/text/bracket_match.dart';
 import 'code_palette.dart';
+import 'highlight_budget.dart';
 import 'code_token.dart';
 import 'code_tokenizer.dart';
 
@@ -22,6 +23,12 @@ class HighlightingTextEditingController extends TextEditingController {
 
   /// 配色方案（设置里可选：跟随系统 / One Dark / 纸白）。
   CodeThemeId codeTheme = CodeThemeId.auto;
+
+  /// 高亮预算：超大文件降级为纯文本，避免每次按键重建上万个 span。
+  HighlightBudget budget = defaultHighlightBudget;
+
+  /// 当前文本是否已超出高亮预算（界面据此提示用户）。
+  bool get highlightDisabled => !budget.allows(text);
 
   String? _cacheKey;
   List<CodeToken> _cacheTokens = const <CodeToken>[];
@@ -44,6 +51,11 @@ class HighlightingTextEditingController extends TextEditingController {
     required bool withComposing,
   }) {
     final TextStyle base = style ?? const TextStyle();
+    // 超出预算：只返回一段纯文本。编辑/保存/运行都不受影响，只是没颜色；
+    // 用「少一点好看」换「不卡死」（ANR 弹窗在用户眼里就是闪退）。
+    if (!budget.allows(text)) {
+      return TextSpan(style: base, text: text);
+    }
     final CodePalette palette = CodePalette.resolve(
       codeTheme,
       Theme.of(context).colorScheme.brightness,
