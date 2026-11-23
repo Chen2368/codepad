@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'core/constants/app_constants.dart';
+import 'core/diagnostics/crash_logger.dart';
 import 'core/settings/settings_controller.dart';
 import 'core/theme/app_theme.dart';
 import 'data/repositories/project_repository.dart';
@@ -16,6 +17,7 @@ class CodePadApp extends StatelessWidget {
     required this.projectRepository,
     this.runtimeFactory = const RuntimeFactory(),
     this.toolchainStatus,
+    this.crashLogger,
   });
 
   final SettingsController settings;
@@ -26,6 +28,9 @@ class CodePadApp extends StatelessWidget {
 
   /// 启动时探测到的内置编译器状态（用于设置页展示）。
   final ToolchainStatus? toolchainStatus;
+
+  /// 崩溃/会话日志记录器（真机注入；测试可不传）。
+  final CrashLogger? crashLogger;
 
   @override
   Widget build(BuildContext context) {
@@ -43,6 +48,7 @@ class CodePadApp extends StatelessWidget {
             settings: settings,
             runtimeFactory: runtimeFactory,
             toolchainStatus: toolchainStatus,
+            crashLogger: crashLogger,
           ),
         );
       },

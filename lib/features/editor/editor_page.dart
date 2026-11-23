@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import '../../core/constants/app_constants.dart';
 import '../../core/text/project_search.dart';
+import '../../core/diagnostics/crash_logger.dart';
 import '../../core/settings/settings_controller.dart';
 import '../../data/models/console_message.dart';
 import '../../data/models/project.dart';
@@ -37,6 +38,7 @@ class EditorPage extends StatefulWidget {
     required this.settings,
     this.runtimeFactory = const RuntimeFactory(),
     this.toolchainStatus,
+    this.crashLogger,
   });
 
   final Project project;
@@ -44,6 +46,9 @@ class EditorPage extends StatefulWidget {
   final SettingsController settings;
   final RuntimeFactory runtimeFactory;
   final ToolchainStatus? toolchainStatus;
+
+  /// 崩溃日志记录器：运行前后打点，闪退后下次启动可判断死在哪。
+  final CrashLogger? crashLogger;
 
   @override
   State<EditorPage> createState() => _EditorPageState();
@@ -122,8 +127,15 @@ class _EditorPageState extends State<EditorPage> {
   /// 先弹窗再运行：不必等程序跑完就能看到编译进度；长程序 / 等待输入时
   /// 也不会出现「点了没反应」的空档。
   void _runAndShowSheet() {
+    // 运行前后打点：如果进程在运行期间被杀，下次启动就能看到「run-begin 没有 run-end」
+    final String file = _controller.activeFile.path;
+    unawaited(widget.crashLogger?.mark('run-begin', file) ?? Future<void>.value());
     // 编译选项来自设置页：-std=… / -O… / -Wall
-    unawaited(_controller.run(compilerFlags: widget.settings.compilerFlags));
+    unawaited(
+      _controller
+          .run(compilerFlags: widget.settings.compilerFlags)
+          .whenComplete(() => widget.crashLogger?.mark('run-end', file)),
+    );
     unawaited(showRunSheet(context: context, controller: _controller));
   }
 

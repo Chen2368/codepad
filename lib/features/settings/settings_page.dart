@@ -6,7 +6,9 @@ import 'package:flutter/services.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/compile/compiler_options.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/diagnostics/crash_logger.dart';
 import '../editor/highlight/code_palette.dart';
+import 'diagnostics_section.dart';
 import 'storage_update_section.dart';
 import '../../core/settings/settings_controller.dart';
 import '../../runtime/native_toolchain.dart';
@@ -16,6 +18,7 @@ import '../../runtime/toolchain_self_check.dart';
 /// 设置页：主题、编辑器字号 / 行号、本地编译器状态与自检、关于信息。
 class SettingsPage extends StatelessWidget {
   const SettingsPage({
+    this.crashLogger,
     super.key,
     required this.settings,
     this.toolchainStatus,
@@ -23,6 +26,9 @@ class SettingsPage extends StatelessWidget {
   });
 
   final SettingsController settings;
+
+  /// 崩溃日志记录器（真机注入）。
+  final CrashLogger? crashLogger;
 
   /// Phase 3：启动时探测到的内置编译器状态（null 表示未探测 / 模拟模式）。
   final ToolchainStatus? toolchainStatus;
@@ -268,6 +274,8 @@ class SettingsPage extends StatelessWidget {
                       ],
                     ),
                   ),
+                  const _SectionTitle('诊断（闪退排查）'),
+                  DiagnosticsSection(crashLogger: crashLogger),
                   const _SectionTitle('存储与更新'),
                   StorageUpdateSection(settings: settings),
                   const _SectionTitle('关于'),

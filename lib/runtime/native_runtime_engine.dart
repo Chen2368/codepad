@@ -117,6 +117,12 @@ class NativeRuntimeEngine implements RuntimeEngine {
             // 把 /data/.../run/main/main.c 这类绝对路径缩成 main.c，控制台才看得清
             final String short = _shorten(text, projectDir);
             final String chunk = '$short\n';
+            if (stream == 'hint') {
+              // 原生侧提示（例如「输出超过 2 MB 已停止显示」）：不算程序输出，
+              // 但必须让用户看到，所以单独发一条
+              emit('… $short\n');
+              return;
+            }
             if (stream == 'stderr') {
               errBuffer.write(chunk);
             } else {

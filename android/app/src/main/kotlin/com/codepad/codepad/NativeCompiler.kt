@@ -233,6 +233,7 @@ class NativeCompiler(
         val exitCode = process.waitFor()
         stdoutReader.join()
         stderrReader.join()
+        flushOutputNow()   // 进程结束后把攒下的最后几行发出去
         running = null
         stdin = null
 
@@ -242,12 +243,73 @@ class NativeCompiler(
         )
     }
 
+    // ---------- 输出批量转发 ----------
+    //
+    // 之前每读到一行就 invokeMethod 一次：程序若在死循环里 printf，10 秒能打出几十万行，
+    // Dart 侧跟不上，消息在 MethodChannel 队列里堆积 → 内存暴涨 → 进程被系统杀掉。
+    // 现在攒够 8 KB 或过 60 ms 才发一次，总转发量封顶 2 MB（超出只排空、不再转发），
+    // 「输出洪泛」就不会再拖垮 App。
+    private val outputLock = Any()
+    private val pendingOutput = LinkedHashMap<String, StringBuilder>()
+    private var forwardedChars = 0L
+    private var floodNotified = false
+    private var flushScheduled = false
+
     private fun emit(stream: String, text: String) {
+        synchronized(outputLock) {
+            if (forwardedChars >= MAX_FORWARD_CHARS) {
+                if (!floodNotified) {
+                    floodNotified = true
+                    val note = "… 输出超过 2 MB，已停止显示（程序仍在运行，可点「停止」结束）"
+                    main.post {
+                        channel.invokeMethod("onOutput", mapOf("stream" to "hint", "text" to note))
+                    }
+                }
+                return
+            }
+            forwardedChars += text.length.toLong()
+            pendingOutput.getOrPut(stream) { StringBuilder() }.append(text).append('\n')
+
+            var total = 0
+            for (buffer in pendingOutput.values) {
+                total += buffer.length
+            }
+            if (total >= FLUSH_CHARS) {
+                flushLocked()
+            } else if (!flushScheduled) {
+                flushScheduled = true
+                main.postDelayed(
+                    {
+                        synchronized(outputLock) {
+                            flushScheduled = false
+                            flushLocked()
+                        }
+                    },
+                    FLUSH_INTERVAL_MS,
+                )
+            }
+        }
+    }
+
+    /** 把攒下的内容一次性发出去（调用方必须持有 outputLock）。 */
+    private fun flushLocked() {
+        if (pendingOutput.isEmpty()) {
+            return
+        }
+        val batches = pendingOutput.entries.map { it.key to it.value.toString() }
+        pendingOutput.clear()
         main.post {
-            channel.invokeMethod(
-                "onOutput",
-                mapOf("stream" to stream, "text" to text),
-            )
+            for ((stream, text) in batches) {
+                channel.invokeMethod("onOutput", mapOf("stream" to stream, "text" to text))
+            }
+        }
+    }
+
+    /** 进程结束时把残留刷干净，否则最后几行会丢。 */
+    private fun flushOutputNow() {
+        synchronized(outputLock) {
+            flushScheduled = false
+            flushLocked()
         }
     }
 
@@ -316,9 +378,18 @@ class NativeCompiler(
         const val TOOLCHAIN_VERSION = "tcc-0.9.27-p20230415-android-7"
 
         /** 命令行形状变了就改这里：会出现在自检报告首屏，用来区分构建。 */
-        const val BUILD_TAG = "1.0.0-c"
+        const val BUILD_TAG = "1.0.1-diag"
 
         /** 与 build.gradle.kts 的 minSdk 一致；bionic 头文件需要这个宏。 */
         const val ANDROID_MIN_SDK = 24
+
+        /** 攒够这么多字符就立刻发一批。 */
+        const val FLUSH_CHARS = 8 * 1024
+
+        /** 最长 60 ms 发一次，保证交互输出的实时感。 */
+        const val FLUSH_INTERVAL_MS = 60L
+
+        /** 单次运行最多转发多少字符（2 MB），超出只排空不转发。 */
+        const val MAX_FORWARD_CHARS = 2L * 1024 * 1024
     }
 }

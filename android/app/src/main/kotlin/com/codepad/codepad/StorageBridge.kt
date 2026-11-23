@@ -62,6 +62,31 @@ class StorageBridge(
                 }
             }
 
+            // ---------- 崩溃/会话日志（诊断闪退用） ----------
+            "mark" -> {
+                // 每次调用往 diag/session.log 追加一行，进程被系统杀掉时它还在磁盘上
+                val kind = call.argument<String>("kind") ?: "?"
+                val detail = call.argument<String>("detail") ?: ""
+                try {
+                    appendDiag("$kind|$detail")
+                    result.success(true)
+                } catch (error: Exception) {
+                    result.error("mark_failed", error.message ?: error.toString(), null)
+                }
+            }
+
+            "readLog" -> {
+                try {
+                    result.success(readDiag())
+                } catch (error: Exception) {
+                    result.error("read_failed", error.message ?: error.toString(), null)
+                }
+            }
+
+            "diagDir" -> {
+                result.success(diagDir().absolutePath)
+            }
+
             "openUrl" -> {
                 val url = call.argument<String>("url")
                 if (url == null) {
@@ -209,6 +234,54 @@ class StorageBridge(
             "uri" to Uri.fromFile(target).toString(),
             "fileCount" to counter[0],
         )
+    }
+
+    // ---------- 诊断日志 ----------
+
+    private fun diagDir(): File {
+        val dir = File(activity.filesDir, "diag")
+        if (!dir.exists()) {
+            dir.mkdirs()
+        }
+        return dir
+    }
+
+    private fun appendDiag(line: String) {
+        val stamp = SimpleDateFormat("MM-dd HH:mm:ss.SSS", Locale.US).format(Date())
+        val file = File(diagDir(), "session.log")
+        // 超过 256 KB 就滚一次，避免无限增长
+        if (file.exists() && file.length() > 256 * 1024) {
+            val old = File(diagDir(), "session.1.log")
+            if (old.exists()) {
+                old.delete()
+            }
+            file.renameTo(old)
+        }
+        file.appendText("$stamp  $line\n")
+    }
+
+    private fun readDiag(): String {
+        val builder = StringBuilder()
+        val crash = File(diagDir(), "crash-native.log")
+        if (crash.exists()) {
+            builder.append("==== 原生未捕获异常 ====\n")
+            builder.append(crash.readText())
+            builder.append("\n")
+        }
+        val session = File(diagDir(), "session.log")
+        if (session.exists()) {
+            builder.append("==== 会话记录（最近 200 行）====\n")
+            val lines = session.readLines()
+            builder.append(lines.takeLast(200).joinToString("\n"))
+            builder.append("\n")
+        }
+        val previous = File(diagDir(), "session.1.log")
+        if (previous.exists()) {
+            builder.append("==== 上一段会话（末尾 120 行）====\n")
+            builder.append(previous.readLines().takeLast(120).joinToString("\n"))
+            builder.append("\n")
+        }
+        return if (builder.isEmpty()) "（还没有日志）\n" else builder.toString()
     }
 
     private companion object {

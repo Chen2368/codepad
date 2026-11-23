@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -6,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app.dart';
+import 'core/diagnostics/crash_logger.dart';
 import 'core/settings/settings_controller.dart';
 import 'data/models/project.dart';
 import 'data/repositories/file_project_repository.dart';
@@ -21,8 +23,13 @@ import 'runtime/runtime_factory.dart';
 /// 2. 打开应用私有目录下的工程仓库（真实文件读写），失败则退回内存仓库；
 /// 3. Phase 3：探测内置 tcc 工具链，决定 C 语言走真实编译还是模拟运行；
 /// 4. 首次启动写入两个示例工程，避免空白首页。
+/// 全局崩溃记录器：诊断日志落在 filesDir/diag，闪退后下次启动可读回。
+final CrashLogger crashLogger = CrashLogger();
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  crashLogger.install();
+  unawaited(crashLogger.beginSession());
 
   final SettingsStore store = await _createSettingsStore();
   final SettingsController settings = SettingsController(store: store);
@@ -37,6 +44,7 @@ Future<void> main() async {
       projectRepository: repository,
       runtimeFactory: runtimeFactory,
       toolchainStatus: runtimeFactory.toolchainStatus,
+      crashLogger: crashLogger,
     ),
   );
 }

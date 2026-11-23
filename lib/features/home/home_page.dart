@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/constants/app_constants.dart';
+import '../../core/diagnostics/crash_logger.dart';
 import '../../core/settings/settings_controller.dart';
 import '../../data/models/project.dart';
 import '../../data/models/source_file.dart';
@@ -20,12 +21,16 @@ class HomePage extends StatefulWidget {
     super.key,
     required this.projectRepository,
     required this.settings,
+    this.crashLogger,
     this.runtimeFactory = const RuntimeFactory(),
     this.toolchainStatus,
   });
 
   final ProjectRepository projectRepository;
   final SettingsController settings;
+
+  /// 崩溃日志记录器（真机注入）。
+  final CrashLogger? crashLogger;
   final RuntimeFactory runtimeFactory;
   final ToolchainStatus? toolchainStatus;
 
@@ -46,6 +51,7 @@ class _HomePageState extends State<HomePage> {
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (BuildContext context) => EditorPage(
+          crashLogger: widget.crashLogger,
           project: project,
           projectRepository: widget.projectRepository,
           settings: widget.settings,
@@ -128,6 +134,7 @@ class _HomePageState extends State<HomePage> {
           settings: widget.settings,
           toolchainStatus: widget.toolchainStatus,
           runtimeFactory: widget.runtimeFactory,
+          crashLogger: widget.crashLogger,
         ),
       ),
     );
