@@ -12,11 +12,17 @@ android {
     // 本机该目录不可写（且要求“不碰 C 盘”），所以把调试密钥库放进项目里。
     // 用 keytool 生成，口令沿用 Android 惯例 android / androiddebugkey。
     signingConfigs {
-        getByName("debug") {
-            storeFile = file("codepad-debug.keystore")
-            storePassword = "android"
-            keyAlias = "androiddebugkey"
-            keyPassword = "android"
+        // 项目内密钥库只在本机存在（.gitignore 排除了 *.keystore）；
+        // CI / 新克隆的仓库里没有这个文件，此时回退到 AGP 默认的
+        // ~/.android/debug.keystore，保证「构建能跑通」，而不是直接报错。
+        // 正式发布请换成自己的 keystore（或用 GitHub Secrets 注入）。
+        if (file("codepad-debug.keystore").exists()) {
+            getByName("debug") {
+                storeFile = file("codepad-debug.keystore")
+                storePassword = "android"
+                keyAlias = "androiddebugkey"
+                keyPassword = "android"
+            }
         }
     }
 
