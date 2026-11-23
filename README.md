@@ -2,7 +2,7 @@
 
 面向平板（华为 HarmonyOS 4.x / Android）的**轻量级移动编程工具**：在平板上直接写、编译、运行 **C** 程序（C++ / Python 排后续阶段），替代装不上的 VS Code。
 
-当前状态：**Phase 3 完成并在真机验证通过（**1.0.2**，C 完整支持 + 闪退取证：标准库 43/44 头、自检 7 项、链接失败自动补救、崩溃/内存/生命周期可追溯）** —— C 语言真编译真运行，编译错误可点击跳行、带中文提示，支持多 `.c` 文件与标准输入，内置一键编译器自检。
+当前状态：**Phase 3 完成并在真机验证通过（**1.0.3**，C 完整支持 + 闪退取证 + 大文件保护：标准库 43/44 头、自检 7 项、链接失败自动补救、崩溃/内存/生命周期可追溯）** —— C 语言真编译真运行，编译错误可点击跳行、带中文提示，支持多 `.c` 文件与标准输入，内置一键编译器自检。
 `flutter analyze` 无问题、`flutter test` 175 个测试全绿、release APK 10.8 MB；C 标准库覆盖见 `scripts\c-coverage-test.ps1`（头文件 43/44、功能组 17/18、真实缺口 0）。
 
 
@@ -37,6 +37,7 @@ cd codepad
 > - **0.13.0（C 标准库补齐）**：新增 scripts\c-coverage-test.ps1（44 头 × 18 组函数实测）。补 compat/iso646.h、compat/stdatomic.h（单线程语义，头内写明）、compat/complex.h（明确 #error 说人话）；垫片补 NULL / __PRETTY_FUNCTION__ / __CHAR16_TYPE__。结果：头文件 43/44、功能组 17/18、真实缺口 0；自检加第 7 项 headers 探针，TOOLCHAIN_VERSION 升 android-7。
 > - **0.13.1**：修 0.13.0 自检第 7 项的误报 —— tcc 不支持 u'' / u"" 等 UTF-16/32 字面量（error: 'u' undeclared），探针改用 (char16_t)65 验证类型；该限制已写入「明确不支持」清单。
 > - **1.0.0（C 收口）**：undefined symbol 现在先**自动补救**（找出缺失实现所在的 .c 一起编，哪怕「多文件编译」关着也救一次），仍失败再按四种情况给出可执行说明；C 支持边界定稿（43/44 头、17/18 功能组、3 项明确不支持）。
+> - **1.0.3（大文件保护）**：高亮加预算（默认 6 万字符 / 1500 行），超限降级为纯文本并在编辑器顶部提示；编辑/保存/运行不受影响。避免超大文件每次按键重建上万个 span 把主线程拖到 ANR（用户看到的「闪退」）。
 > - **1.0.2（诊断增强）**：日志统一走 `Diag` 单例；每次标记附带内存摘要（java used/max + native），`onResume/onPause` 记录前后台切换，诊断报告带内存行 —— 这样「跑到一半 App 没了」能区分 **OOM 被杀**、**切后台被回收**，还是真崩在前台。发布改为打 tag 后由 GitHub Actions 自动构建上传。
 > - **1.0.1（闪退取证）**：新增崩溃/会话日志（Dart + 原生双层落盘），运行前后写 
 un-begin/run-end，下次启动即可判断「上次是否死在运行 C 期间」；设置页加「诊断」分区（状态、日志预览、导出 zip、复制报告）。同时把输出改成批量转发（8 KB / 60 ms）并封顶 2 MB，修掉死循环 printf 导致的通道堆积与 OOM 闪退。
@@ -68,19 +69,19 @@ un-begin/run-end，下次启动即可判断「上次是否死在运行 C 期间�
 
 [**⬇ 下载 CodePad（arm64）**](https://github.com/Chen2368/codepad/releases/latest)
 
-- `CodePad-1.0.2-release-arm64.apk` — 10.7 MB，平板上直接安装（**仅 arm64**）
+- `CodePad-1.0.3-release-arm64.apk` — 10.7 MB，平板上直接安装（**仅 arm64**）
 - 调试版需自行构建：`flutter build apk --debug --target-platform android-arm64`
 
 校验（release 包）：
 
 ```
-sha256 2EB20C79EBA139ABF00E175A921AC992FAC5CFCF0F7C692BC19CBA123C01898B
+sha256 BACCE48A127308968EC3F79591232FBF1E5FB71F59C23572AC80F0405F86F8F5
 ```
 
 包信息（`aapt2 dump badging` / `dump xmltree` 实测）：
 
 ```
-package: name='com.codepad.codepad' versionCode='26' versionName='1.0.2'
+package: name='com.codepad.codepad' versionCode='27' versionName='1.0.3'
 application-label:'CodePad'
 minSdkVersion:'24'   targetSdkVersion:'36'   compileSdkVersion='36'
 extractNativeLibs='true'
