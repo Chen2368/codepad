@@ -91,17 +91,28 @@ jobs:
         continue-on-error: true
         run: flutter test
 
-      # 仓库里的 wrapper 指向腾讯镜像（国内本地构建快），GitHub runner 拉不动，这里换成官方源
-      - name: 改用官方 Gradle 发行版
+      # 本地为了速度用腾讯 Gradle 镜像 + 阿里云 Maven 镜像；GitHub runner 访问这些会超时
+      # （日志里是 "Could not HEAD https://maven.aliyun.com/..."，51 个依赖全挂）。
+      # 所以 CI 里临时替换成官方源 —— 只改工作区文件，不改仓库内容。
+      - name: 换成官方 Gradle / Maven 源
         run: |
           python3 - <<'PY'
           import re, pathlib
-          p = pathlib.Path('android/gradle/wrapper/gradle-wrapper.properties')
-          s = p.read_text()
+
+          wrap = pathlib.Path('android/gradle/wrapper/gradle-wrapper.properties')
+          s = wrap.read_text()
           s = re.sub(r'https\\?://mirrors\.cloud\.tencent\.com/gradle/',
                      'https\\://services.gradle.org/distributions/', s)
-          p.write_text(s)
+          wrap.write_text(s)
+          print('--- gradle-wrapper.properties ---')
           print(s)
+
+          settings = pathlib.Path('android/settings.gradle.kts')
+          lines = settings.read_text().splitlines()
+          kept = [l for l in lines if 'maven.aliyun.com' not in l]
+          settings.write_text('\n'.join(kept) + '\n')
+          print('--- settings.gradle.kts repositories ---')
+          print('\n'.join(kept))
           PY
 
       - name: 构建 APK
