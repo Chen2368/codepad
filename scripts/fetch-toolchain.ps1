@@ -33,9 +33,17 @@ New-Item -ItemType Directory -Force -Path $tmp | Out-Null
 $assets      = Join-Path $projectRoot 'android/app/src/main/assets/toolchain'
 $jniDir      = Join-Path $projectRoot 'android/app/src/main/jniLibs/arm64-v8a'
 
-# Termux 的包版本；升级时改这里
-$tccDeb  = 'https://packages.termux.dev/apt/termux-main/pool/main/t/tcc/tcc_1%3A0.9.27-p20230415-2_aarch64.deb'
-$sysDeb  = 'https://packages.termux.dev/apt/termux-main/pool/main/n/ndk-sysroot/ndk-sysroot_30_aarch64.deb'
+# 固定版本：仓库 tools/debs 里放着这两个 .deb（总共约 2.1 MB），
+# 因此构建**可复现**、也不受上游删包影响 —— 2026-11 起 Termux 已把 tcc 升到 0.9.28 并换了包结构，
+# 老地址直接 404，所以这里优先用仓库内的本地副本，缺失时才尝试下载（地址仅作参考）。
+$tccPackages = @{
+  Local = Join-Path $projectRoot 'tools/debs/tcc_0.9.27-p20230415-2_aarch64.deb'
+  Url   = 'https://packages.termux.dev/apt/termux-main/pool/main/t/tcc/tcc_1%3A0.9.27-p20230415-2_aarch64.deb'
+}
+$sysPackages = @{
+  Local = Join-Path $projectRoot 'tools/debs/ndk-sysroot_30_aarch64.deb'
+  Url   = 'https://packages.termux.dev/apt/termux-main/pool/main/n/ndk-sysroot/ndk-sysroot_30_aarch64.deb'
+}
 
 # .deb 是 ar 归档：Windows 自带的 tar.exe 与 Linux 的 bsdtar 都是 libarchive，能直接读；
 # Ubuntu 默认的 GNU tar 读不了，所以优先挑 bsdtar，其次 tar，最后报一句人话。
@@ -47,14 +55,23 @@ if (-not $tarExe) {
   throw '找不到 tar / bsdtar。Debian/Ubuntu 请先装：apt-get install -y libarchive-tools'
 }
 
-function Get-Deb([string]$url, [string]$target) {
+function Get-Deb([hashtable]$packages, [string]$target) {
   if (Test-Path $target) {
     Write-Host "[skip] 已存在 $target" -ForegroundColor DarkGray
     return
   }
-  Write-Host "[get ] $url" -ForegroundColor Cyan
-  & curl.exe -L --retry 3 --connect-timeout 20 --max-time 300 -o $target $url --silent --show-error
-  if ($LASTEXITCODE -ne 0) { throw "下载失败：$url" }
+  $local = $packages.Local
+  if ($local -and (Test-Path $local)) {
+    Write-Host "[copy] 使用仓库内固定版本：$([System.IO.Path]::GetFileName($local))" -ForegroundColor Cyan
+    Copy-Item $local $target -Force
+    return
+  }
+  Write-Host "[get ] $($packages.Url)" -ForegroundColor Cyan
+  $curl = if (Get-Command curl -ErrorAction SilentlyContinue) { 'curl' } else { 'curl.exe' }
+  & $curl -L --retry 3 --connect-timeout 20 --max-time 300 -o $target $packages.Url --silent --show-error
+  if ($LASTEXITCODE -ne 0) {
+    throw "下载失败：$($packages.Url)。可以手动把对应 .deb 放到 tools/debs/ 再重跑（见 tools/debs/README.md）。"
+  }
 }
 
 function Expand-Deb([string]$deb, [string]$outDir) {
@@ -73,8 +90,8 @@ New-Item -ItemType Directory -Force -Path $tmp, $assets, $jniDir | Out-Null
 
 $tccPath = Join-Path $tmp 'tcc.deb'
 $sysPath = Join-Path $tmp 'ndk-sysroot.deb'
-Get-Deb $tccDeb $tccPath
-Get-Deb $sysDeb $sysPath
+Get-Deb $tccPackages $tccPath
+Get-Deb $sysPackages $sysPath
 
 Expand-Deb $tccPath (Join-Path $tmp 'ex-tcc')
 Expand-Deb $sysPath (Join-Path $tmp 'ex-sysroot')

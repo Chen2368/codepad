@@ -28,7 +28,8 @@ pwsh -NoProfile -File ./scripts/fetch-toolchain.ps1
 
 脚本会：
 
-1. 从 Termux 官方源下载 `tcc` 与 `ndk-sysroot` 两个 `.deb`；
+1. 用仓库 `tools/debs/` 里**固定版本**的两个 `.deb`（tcc 0.9.27 + ndk-sysroot 30，共 2.1 MB），
+   本地缺失时才尝试从 Termux 源下载（上游已升级到 0.9.28 并改了包结构，老地址会 404，见 `tools/debs/README.md`）；
 2. 解包并把编译器放进 `android/app/src/main/jniLibs/arm64-v8a/libtcc.so`；
 3. 把 bionic 头文件裁剪后放进 `android/app/src/main/assets/toolchain/`（只保留 C 需要的，去掉 C++/camera）；
 4. 复制 `android/compat-headers/`（我们写的 tcc 兼容垫片）到 `assets/toolchain/compat/`；
