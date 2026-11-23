@@ -92,11 +92,13 @@ String buildCrashReport({
   required String buildTag,
   required String deviceInfo,
   required String rawLog,
+  String memory = '（未采集）',
 }) {
   final StringBuffer buffer = StringBuffer()
     ..writeln('CodePad 崩溃诊断报告')
     ..writeln('版本：$appVersion   构建：$buildTag')
     ..writeln('设备：$deviceInfo')
+    ..writeln('内存：$memory')
     ..writeln('时间：${DateTime.now().toIso8601String()}')
     ..writeln('')
     ..writeln(rawLog);

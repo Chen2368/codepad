@@ -59,6 +59,18 @@ class MainActivity : FlutterActivity() {
         }
     }
 
+    // 生命周期与内存：区分「切后台被系统回收」与「前台运行中崩掉」，
+    // 并把内存快照写进日志 —— 判断 OOM 全靠它。
+    override fun onResume() {
+        super.onResume()
+        Diag.append(this, "app-resume", Diag.memSummary())
+    }
+
+    override fun onPause() {
+        Diag.append(this, "app-pause", Diag.memSummary())
+        super.onPause()
+    }
+
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         // 先交给桥接处理（选择本地 APK）；不是它的请求再走默认流程
         if (storageBridge?.onActivityResult(requestCode, resultCode, data) == true) {

@@ -83,6 +83,23 @@ class CrashLogger {
     }
   }
 
+  /// 当前内存快照（判断闪退是否因为 OOM）。
+  Future<String> memorySummary() async {
+    try {
+      final Map<Object?, Object?>? map =
+          await _channel.invokeMapMethod<Object?, Object?>('memInfo');
+      if (map == null) {
+        return '（取不到）';
+      }
+      return 'java=${map['javaUsedMb']}/${map['javaMaxMb']}MB '
+          'native=${map['nativeMb']}MB';
+    } on MissingPluginException {
+      return '（桌面环境）';
+    } on PlatformException {
+      return '（取不到）';
+    }
+  }
+
   /// 诊断目录路径（用于导出）。
   Future<String?> diagDir() async {
     if (_diagDir != null) {
