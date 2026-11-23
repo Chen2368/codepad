@@ -56,6 +56,23 @@ class HighlightingTextEditingController extends TextEditingController {
     if (!budget.allows(text)) {
       return TextSpan(style: base, text: text);
     }
+    try {
+      return _buildHighlighted(context, style, withComposing);
+    } catch (error, stack) {
+      // 输入法（尤其快速上屏）可能短暂给出与文本不一致的 composing 区间，
+      // 而高亮里有十几处 substring —— 一旦越界就抛 RangeError。
+      // 输入路径绝不能抛错：整体兜底退回纯文本，代价只是颜色。
+      debugPrint('语法高亮失败，已退回纯文本：$error\n$stack');
+      return TextSpan(style: base, text: text);
+    }
+  }
+
+  TextSpan _buildHighlighted(
+    BuildContext context,
+    TextStyle? style,
+    bool withComposing,
+  ) {
+    final TextStyle base = style ?? const TextStyle();
     final CodePalette palette = CodePalette.resolve(
       codeTheme,
       Theme.of(context).colorScheme.brightness,
