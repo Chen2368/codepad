@@ -1,0 +1,89 @@
+name: Release
+
+# 打 tag（v*）时自动：组装内置 C 工具链 → 构建 arm64 APK → 创建 Release 并附上 APK。
+# 用的是 GitHub 自带的 GITHUB_TOKEN，不需要在仓库里存任何密钥。
+#
+# 手动触发也可以：Actions → Release → Run workflow（填一个已存在的 tag）。
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: '要发布的 tag（例如 v1.0.1）'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: 构建并发布 arm64 APK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安装 JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: 安装 Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: 依赖
+        run: flutter pub get
+
+      # .deb 是 ar 归档，Ubuntu 的 GNU tar 读不了；装 bsdtar（libarchive）供脚本使用
+      - name: 安装 bsdtar
+        run: sudo apt-get update && sudo apt-get install -y libarchive-tools
+
+      # 仓库不含编译器二进制：脚本从 Termux 源下载 tcc + bionic 头文件并组装
+      - name: 组装内置 C 工具链
+        shell: pwsh
+        run: ./scripts/fetch-toolchain.ps1
+
+      - name: 静态检查
+        run: flutter analyze
+
+      - name: 单元测试
+        run: flutter test
+
+      - name: 构建 APK
+        run: flutter build apk --release --target-platform android-arm64
+
+      - name: 记录产物信息
+        id: artifact
+        run: |
+          APK=build/app/outputs/flutter-apk/app-release.apk
+          DEST=CodePad-$(echo "${{ github.ref_name }}" | sed 's/^v//')-release-arm64.apk
+          cp "$APK" "$DEST"
+          echo "path=$DEST" >> "$GITHUB_OUTPUT"
+          echo "sha256=$(sha256sum "$DEST" | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+          ls -lh "$DEST"
+
+      - name: 发布 Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.tag || github.ref_name }}
+          name: CodePad ${{ inputs.tag || github.ref_name }}
+          draft: false
+          prerelease: false
+          files: ${{ steps.artifact.outputs.path }}
+          body: |
+            平板上的 C 语言 IDE —— 内置 TinyCC 0.9.27（aarch64），真编译、真运行。
+
+            **安装**：下载 `${{ steps.artifact.outputs.path }}`（**仅 arm64**），
+            平板上直接安装；打开后到「设置 → 编译器 → 运行编译器自检」，应为 7 项全绿。
+
+            **校验**：`sha256 ${{ steps.artifact.outputs.sha256 }}`
+
+            **第三方组件**：TinyCC (LGPL-2.1)、bionic 头文件 (Apache-2.0)，详见 THIRD_PARTY_NOTICES.md。
+
+            **本版变化**：见仓库 docs/phase3-checklist.md 的最后一节。
